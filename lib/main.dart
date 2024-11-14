@@ -113,7 +113,7 @@ class MyHomePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Login:', 
+            Text('Login', 
               style: TextStyle(
                 color: Color.fromRGBO(0, 0, 0, 1), // Imposta il colore del testo
                 fontSize: 20, // Imposta la dimensione del testo
