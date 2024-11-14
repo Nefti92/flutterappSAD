@@ -1,6 +1,7 @@
 # Installation guide
 
-Updated as of 18/09/2024
+Updated as of 18/09/2024.
+
 Source: https://docs.flutter.dev/get-started/install/windows/mobile
 
 ## For development:
