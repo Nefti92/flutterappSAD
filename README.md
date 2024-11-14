@@ -60,7 +60,8 @@ Source: https://docs.flutter.dev/get-started/install/windows/mobile
           This option sends you the Flutter install page if you have not installed Git for Windows 
           as directed in the development tools prerequisites.
           
-    6. When prompted Which Flutter template?, ignore it. Press Esc. You can create a test project after checking your development setup.
+    6. When prompted Which Flutter template?, ignore it. 
+       Press Esc. You can create a test project after checking your development setup.
 
   Download the Flutter SDK:
 
@@ -75,7 +76,8 @@ Source: https://docs.flutter.dev/get-started/install/windows/mobile
     
        "Downloading the Flutter SDK. This may take a few minutes."
       
-       This download takes a few minutes. If you suspect that the download has hung, click Cancel then start the installation again.
+       This download takes a few minutes. 
+       If you suspect that the download has hung, click Cancel then start the installation again.
        
     3. Once it finishes downloading Flutter, the Output panel displays.
     
