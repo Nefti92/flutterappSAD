@@ -115,7 +115,7 @@ class MyHomePage extends StatelessWidget {
             Text('Login', 
               style: TextStyle(
                 color: Color.fromRGBO(0, 0, 0, 1), // Imposta il colore del testo
-                fontSize: 20, // Imposta la dimensione del testo
+                fontSize: 30, // Imposta la dimensione del testo
               ),
               selectionColor: Color.fromRGBO(0, 0, 0, 1),
             ),
