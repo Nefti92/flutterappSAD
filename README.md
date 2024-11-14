@@ -11,7 +11,7 @@ Source: https://docs.flutter.dev/get-started/install/windows/mobile
     These versions of Windows must include Windows PowerShell version 5 or higher.
 
   ### Development tools:
-    #### Download and install the Windows version of the following packages:
+    Download and install the Windows version of the following packages:
 
       Git for Windows 2.27 or later to manage source code.
   
@@ -21,25 +21,25 @@ Source: https://docs.flutter.dev/get-started/install/windows/mobile
       The developers of the preceding software provide support for those products. 
       To troubleshoot installation issues, consult that product's documentation.
   
-      #### Configure a text editor or IDE:
+      Configure a text editor or IDE:
         You can build apps with Flutter using any text editor or integrated development environment (IDE) 
         combined with Flutter's command-line tools.
   
         Using an IDE with a Flutter extension or plugin provides code completion, syntax highlighting, 
         widget editing assists, debugging, and other features.
 
-    #### Recommended:
+    Recommended:
       The Flutter team recommends installing Visual Studio Code 1.77 or later and the Flutter extension for VS Code.
       This combination simplifies installing the Flutter SDK.
 
   ## Install the Flutter SDK:
     To install the Flutter SDK, you can use the VS Code Flutter extension or download and install the Flutter bundle yourself.
 
-    ### Use VS Code to install:
+    Use VS Code to install:
       To install Flutter using these instructions, verify that you have installed 
       Visual Studio Code 1.77 or later and the Flutter extension for VS Code.
 
-      #### Prompt VS Code to install Flutter:
+      Prompt VS Code to install Flutter:
         1. Launch VS Code.
 
         2.  To open the Command Palette, press Control + Shift + P.
@@ -58,7 +58,7 @@ Source: https://docs.flutter.dev/get-started/install/windows/mobile
 
         6. When prompted Which Flutter template?, ignore it. Press Esc. You can create a test project after checking your development setup.
 
-      ### Download the Flutter SDK:
+      Download the Flutter SDK:
         1. When the Select Folder for Flutter SDK dialog displays, choose where you want to install Flutter.
            VS Code places you in your user profile to start. Choose a different location.
 
