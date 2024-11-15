@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'customWidgets.dart';
 
 var mail = 'admin';
-var password = 'admin';
+var password = '1234';
 
 void main() {
   // Avvio dell'App
@@ -78,8 +78,12 @@ class MyHomePage extends StatelessWidget {
               prefixIcon: Icons.email,
               // Tipologia di scrittura permessa
               keyboardType: TextInputType.emailAddress,
-
-              onChanged: (value),
+              // Funzione di lettura del testo scritto
+              onChanged: (value){
+                if(value != null) {
+                  inputMail = value;
+                }
+              },
               // Colore del 'consiglio'
               hintColor: const Color.fromRGBO(0, 0, 0, 0.3),
               // Colore del bordo della cella
@@ -99,6 +103,11 @@ class MyHomePage extends StatelessWidget {
               labelText: 'Password',
               hintText: 'Inserisci la tua password',
               prefixIcon: Icons.lock,
+              onChanged: (value){
+                if(value != null) {
+                  inputPassword = value;
+                }
+              },
               isObscure: true,
               hintColor: const Color.fromRGBO(0, 0, 0, 0.3),
               borderColor: const Color.fromRGBO(255, 204, 128, 1),
@@ -112,6 +121,11 @@ class MyHomePage extends StatelessWidget {
             // Pulsante per verificare le credenziali
             ElevatedButton(
               onPressed: () {
+                print('password: ${inputPassword}, ${password}');
+                print('email: ${inputMail}, ${mail}');
+                if(mail == inputMail && password == inputPassword) {
+                  print('loggato!');
+                }
               },
               child: Text('Accedi'),
             ),
