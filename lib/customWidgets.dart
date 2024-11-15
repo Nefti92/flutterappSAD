@@ -6,6 +6,7 @@ class CustomTextField extends StatelessWidget {
   final IconData prefixIcon;
   final bool isObscure;
   final TextInputType keyboardType;
+  final String inputText;
   final Color textColor;
   final Color hintColor;
   final double fontSize;
@@ -14,6 +15,7 @@ class CustomTextField extends StatelessWidget {
   final Color borderColor;
   final double height;
   final double width;
+  final Function(String)? onChanged;
 
   const CustomTextField({
     Key? key,
@@ -30,6 +32,8 @@ class CustomTextField extends StatelessWidget {
     this.borderColor = Colors.grey,
     this.height = 60.0,
     this.width = double.infinity,
+    this.inputText = '',
+    this.onChanged,
   }) : super(key: key);
 
   @override
@@ -46,6 +50,7 @@ class CustomTextField extends StatelessWidget {
         ),
       ),
       child: TextField(
+        onChanged: onChanged,
         decoration: InputDecoration(
           hintStyle: TextStyle(
             color: hintColor
