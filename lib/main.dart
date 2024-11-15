@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'customWidgets.dart';
 
+var mail = 'admin';
+var password = 'admin';
+
 void main() {
   // Avvio dell'App
   runApp(MyApp());
@@ -42,6 +45,8 @@ class MyHomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     // Si ottiene la larghezza dello schermo
     var screenWidth = MediaQuery.of(context).size.width;
+    var inputMail;
+    var inputPassword;
 
     return Scaffold(
       body: Center(
@@ -73,6 +78,8 @@ class MyHomePage extends StatelessWidget {
               prefixIcon: Icons.email,
               // Tipologia di scrittura permessa
               keyboardType: TextInputType.emailAddress,
+
+              onChanged: (value),
               // Colore del 'consiglio'
               hintColor: const Color.fromRGBO(0, 0, 0, 0.3),
               // Colore del bordo della cella
