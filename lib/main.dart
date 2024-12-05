@@ -2,6 +2,7 @@ import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'customWidgets.dart';
+import 'homePage.dart';
 
 var mail = 'admin';
 var password = '1234';
@@ -29,7 +30,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
         ),
         // imposta la pagina iniziale dell'App
-        home: MyHomePage(),
+        home: LoginPage(),
       ),
     );
   }
@@ -40,13 +41,14 @@ class MyAppState extends ChangeNotifier {
   var current = WordPair.random();
 }
 
-class MyHomePage extends StatelessWidget {
+class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Si ottiene la larghezza dello schermo
     var screenWidth = MediaQuery.of(context).size.width;
     var inputMail;
     var inputPassword;
+    const homePage = SecondRoute();
 
     return Scaffold(
       body: Center(
@@ -126,6 +128,10 @@ class MyHomePage extends StatelessWidget {
                 if(mail == inputMail && password == inputPassword) {
                   print('loggato!');
                 }
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => homePage),
+                );
               },
               child: Text('Accedi'),
             ),
