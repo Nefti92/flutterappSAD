@@ -1,8 +1,8 @@
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
+import 'package:cdapp/homePage.dart';
 import 'package:provider/provider.dart';
 import 'customWidgets.dart';
-import 'homePage.dart';
 
 var mail = 'admin';
 var password = '1234';
@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
       create: (context) => MyAppState(),
       child: MaterialApp(
         // Nome dell'App
-        title: 'Namer App',
+        title: 'cdApp',
         theme: ThemeData(
           useMaterial3: true,
           // Imposta il tema colore
@@ -46,9 +46,9 @@ class LoginPage extends StatelessWidget {
   Widget build(BuildContext context) {
     // Si ottiene la larghezza dello schermo
     var screenWidth = MediaQuery.of(context).size.width;
-    var inputMail;
-    var inputPassword;
-    const homePage = SecondRoute();
+    String inputMail = '';
+    String inputPassword = '';
+    const homePage = HomePage();
 
     return Scaffold(
       body: Center(
@@ -82,9 +82,7 @@ class LoginPage extends StatelessWidget {
               keyboardType: TextInputType.emailAddress,
               // Funzione di lettura del testo scritto
               onChanged: (value){
-                if(value != null) {
-                  inputMail = value;
-                }
+                inputMail = value;
               },
               // Colore del 'consiglio'
               hintColor: const Color.fromRGBO(0, 0, 0, 0.3),
@@ -92,13 +90,12 @@ class LoginPage extends StatelessWidget {
               borderColor: const Color.fromRGBO(255, 204, 128, 1),
               // Altezza della cella
               height: 70,
-              // Largheza della cella
+              // Larghezza della cella
               width: screenWidth*0.93,
             ),
 
             // Separatore
             SizedBox(height: 10),
-
             
             // Widget personalizzato per l'inserimento della password
             CustomTextField(
@@ -106,10 +103,8 @@ class LoginPage extends StatelessWidget {
               hintText: 'Inserisci la tua password',
               prefixIcon: Icons.lock,
               onChanged: (value){
-                if(value != null) {
-                  inputPassword = value;
-                }
-              },
+                inputPassword = value;
+                            },
               isObscure: true,
               hintColor: const Color.fromRGBO(0, 0, 0, 0.3),
               borderColor: const Color.fromRGBO(255, 204, 128, 1),
@@ -123,8 +118,8 @@ class LoginPage extends StatelessWidget {
             // Pulsante per verificare le credenziali
             ElevatedButton(
               onPressed: () {
-                print('password: ${inputPassword}, ${password}');
-                print('email: ${inputMail}, ${mail}');
+                print('password: $inputPassword, $password');
+                print('email: $inputMail, $mail');
                 if(mail == inputMail && password == inputPassword) {
                   print('loggato!');
                 }
