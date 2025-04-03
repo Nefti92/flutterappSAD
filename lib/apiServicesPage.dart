@@ -1,92 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path_provider/path_provider.dart';
 import 'baseScaffold.dart';
 import 'package:intl/intl.dart';
-import 'dart:io';
-
-class ApiService {
-  final int? id;
-  final String title;
-  final String description;
-  final String icon;
-  final String ip;
-  final int port;
-  final DateTime lastAccess;
-
-  ApiService({
-    this.id,
-    required this.title,
-    required this.description,
-    required this.icon,
-    required this.ip,
-    required this.port,
-    required this.lastAccess,
-  });
-
-  Map<String, dynamic> toMap() {
-    return {
-      'id': id,
-      'title': title,
-      'description': description,
-      'icon': icon,
-      'ip': ip,
-      'port': port,
-      'lastAccess': lastAccess.toIso8601String(),
-    };
-  }
-
-  static ApiService fromMap(Map<String, dynamic> map) {
-    return ApiService(
-      id: map['id'],
-      title: map['title'],
-      description: map['description'],
-      icon: map['icon'],
-      ip: map['ip'],
-      port: map['port'],
-      lastAccess: DateTime.parse(map['lastAccess']),
-    );
-  }
-}
-
-class ApiDatabase {
-  static Database? _db;
-
-  static Future<Database> get database async {
-    if (_db != null) return _db!;
-    Directory dir = await getApplicationDocumentsDirectory();
-    String path = '${dir.path}apis.db';
-    _db = await openDatabase(
-      path,
-      version: 1,
-      onCreate: (db, version) {
-        return db.execute('''
-          CREATE TABLE api_services (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT,
-            description TEXT,
-            icon TEXT,
-            ip TEXT,
-            port INTEGER,
-            lastAccess TEXT
-          )
-        ''');
-      },
-    );
-    return _db!;
-  }
-
-  static Future<void> insert(ApiService service) async {
-    final db = await database;
-    await db.insert('api_services', service.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
-  }
-
-  static Future<List<ApiService>> getAll() async {
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query('api_services', orderBy: 'lastAccess DESC');
-    return maps.map((map) => ApiService.fromMap(map)).toList();
-  }
-}
+import 'package:cdapp/models/api_service_database.dart';
+import 'package:cdapp/models/api_service_model.dart';
+import 'package:cdapp/servicePage.dart';
 
 
 class ApiServicesPage extends StatefulWidget {
@@ -115,7 +32,7 @@ class _ApiServicesPageState extends State<ApiServicesPage> {
   }
 
   void _loadServices() async {
-    final data = await ApiDatabase.getAll();
+    final data = await ApiDatabase.getAllServices();
     setState(() {
       services = data;
     });
@@ -175,7 +92,7 @@ class _ApiServicesPageState extends State<ApiServicesPage> {
                       icon: selectedIcon!.codePoint.toString(),
                       lastAccess: DateTime.now(),
                     );
-                    await ApiDatabase.insert(newService);
+                    await ApiDatabase.insertService(newService);
                     _loadServices();
                     Navigator.pop(context);
                   }
@@ -218,34 +135,49 @@ class _ApiServicesPageState extends State<ApiServicesPage> {
               itemCount: filtered.length,
               itemBuilder: (_, i) {
                 final item = filtered[i];
-                return Container(
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.deepOrange),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(child: Text(item.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
-                          Icon(IconData(int.parse(item.icon), fontFamily: 'MaterialIcons')),
-                        ],
+                return GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ApiDetailPage(apiService: item),
                       ),
-                      const Divider(),
-                      Text(item.description),
-                      const SizedBox(height: 4),
-                      Text('IP: ${item.ip}:${item.port}'),
-                      Container(
-                        margin: const EdgeInsets.only(top: 8),
-                        child: Text(
-                          'Last Access: ${DateFormat('yyyy-MM-dd HH:mm').format(item.lastAccess.toLocal())}',
-                          style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic, fontSize: 12),
+                    );
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.deepOrange),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                item.title,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                            ),
+                            Icon(IconData(int.parse(item.icon), fontFamily: 'MaterialIcons')),
+                          ],
                         ),
-                      ),
-                    ],
+                        const Divider(),
+                        Text(item.description),
+                        const SizedBox(height: 4),
+                        Text('IP: ${item.ip}:${item.port}'),
+                        Container(
+                          margin: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            'Last Access: ${DateFormat('yyyy-MM-dd HH:mm').format(item.lastAccess.toLocal())}',
+                            style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic, fontSize: 12),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
