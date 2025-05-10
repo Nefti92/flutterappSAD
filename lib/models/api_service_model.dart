@@ -1,11 +1,13 @@
 // lib/models/api_service_model.dart
 class ApiService {
   final int? id;
+  final String address;
   final String title;
   final String description;
   final String icon;
   final String ip;
   final int port;
+  final int chainID;
   final DateTime lastAccess;
 
   ApiService({
@@ -16,16 +18,20 @@ class ApiService {
     required this.ip,
     required this.port,
     required this.lastAccess,
+    required this.address, 
+    required this.chainID,
   });
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'address': address,
       'title': title,
       'description': description,
       'icon': icon,
       'ip': ip,
       'port': port,
+      'chainID': chainID,
       'lastAccess': lastAccess.toIso8601String(),
     };
   }
@@ -33,11 +39,13 @@ class ApiService {
   static ApiService fromMap(Map<String, dynamic> map) {
     return ApiService(
       id: map['id'],
+      address: map['address'],
       title: map['title'],
       description: map['description'],
       icon: map['icon'],
       ip: map['ip'],
       port: map['port'],
+      chainID: map['chainID'],
       lastAccess: DateTime.parse(map['lastAccess']),
     );
   }

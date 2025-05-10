@@ -40,9 +40,11 @@ class _ApiServicesPageState extends State<ApiServicesPage> {
 
   void _showAddDialog() {
   final titleController = TextEditingController();
+  final addressController = TextEditingController();
   final descController = TextEditingController();
   final ipController = TextEditingController();
   final portController = TextEditingController();
+  final chainIDController = TextEditingController();
   IconData? selectedIcon;
     showDialog(
       context: context,
@@ -54,9 +56,11 @@ class _ApiServicesPageState extends State<ApiServicesPage> {
               child: Column(
                 children: [
                   TextField(controller: titleController, decoration: const InputDecoration(labelText: 'Title')),
+                  TextField(controller: addressController, decoration: const InputDecoration(labelText: 'Address')),
                   TextField(controller: descController, decoration: const InputDecoration(labelText: 'Description')),
                   TextField(controller: ipController, decoration: const InputDecoration(labelText: 'IP Address')),
                   TextField(controller: portController, decoration: const InputDecoration(labelText: 'Port'), keyboardType: TextInputType.number),
+                  TextField(controller: chainIDController, decoration: const InputDecoration(labelText: 'ChainID'), keyboardType: TextInputType.number),
                   const SizedBox(height: 10),
                   Wrap(
                     spacing: 12,
@@ -86,9 +90,11 @@ class _ApiServicesPageState extends State<ApiServicesPage> {
                   if (selectedIcon != null) {
                     final newService = ApiService(
                       title: titleController.text,
+                      address: addressController.text,
                       description: descController.text,
                       ip: ipController.text,
                       port: int.tryParse(portController.text) ?? 0,
+                      chainID: int.tryParse(chainIDController.text) ?? 1337,
                       icon: selectedIcon!.codePoint.toString(),
                       lastAccess: DateTime.now(),
                     );
@@ -117,15 +123,28 @@ class _ApiServicesPageState extends State<ApiServicesPage> {
       currentIndex: 2,
       body: Column(
         children: [
-          AppBar(
-            title: TextField(
-              controller: _searchController,
-              onChanged: (val) => setState(() => query = val),
-              decoration: const InputDecoration(
-                hintText: 'Search...',
-                prefixIcon: Icon(Icons.search),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(vertical: 18),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            // color: Theme.of(context).appBarTheme.backgroundColor ?? Colors.deepOrange,
+            child: SafeArea(
+              bottom: false,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (val) => setState(() => query = val),
+                      decoration: const InputDecoration(
+                        hintText: 'Search...',
+                        prefixIcon: Icon(Icons.search),
+                        border: InputBorder.none,
+                        filled: true,
+                        fillColor: Colors.white,
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -166,9 +185,10 @@ class _ApiServicesPageState extends State<ApiServicesPage> {
                           ],
                         ),
                         const Divider(),
+                        Text('Address: ${item.address}'),
                         Text(item.description),
                         const SizedBox(height: 4),
-                        Text('IP: ${item.ip}:${item.port}'),
+                        Text('IP: ${item.ip}:${item.port} - ChainID: ${item.chainID}'),
                         Container(
                           margin: const EdgeInsets.only(top: 8),
                           child: Text(

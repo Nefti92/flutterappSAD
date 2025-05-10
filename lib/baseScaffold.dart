@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'apiServicesPage.dart';
 import 'homePage.dart';
 import 'main.dart';
+import 'settingsPage.dart';
 
 class BaseScaffold extends StatelessWidget {
   final Widget body;
@@ -26,6 +27,8 @@ class BaseScaffold extends StatelessWidget {
         page = const HomePage();
       case 2:
         page = const ApiServicesPage();
+      case 3:
+        page = const SettingsPage();
       default:
         return;
     }
@@ -42,6 +45,8 @@ class BaseScaffold extends StatelessWidget {
       body: body,
       floatingActionButton: floatingActionButton,
       bottomNavigationBar: BottomNavigationBar(
+        selectedItemColor: Colors.deepOrangeAccent,
+        unselectedItemColor: Colors.grey[500],
         currentIndex: currentIndex,
         onTap: (index) => _onTabTapped(context, index),
         items: const [
@@ -56,6 +61,10 @@ class BaseScaffold extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Icon(Icons.api),
             label: 'API',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
           ),
         ],
       ),

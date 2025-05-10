@@ -19,11 +19,13 @@ class ApiDatabase {
         await db.execute('''
           CREATE TABLE api_services (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            address TEXT,
             title TEXT,
             description TEXT,
             icon TEXT,
             ip TEXT,
             port INTEGER,
+            chainID INTEGER,
             lastAccess TEXT
           )
         ''');

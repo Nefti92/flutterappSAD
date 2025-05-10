@@ -53,7 +53,7 @@ class _HomePage extends State<HomePage> {
                   hintText: "Search...",
                   border: InputBorder.none,
                   prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 5),
                 ),
               ),
             ),
