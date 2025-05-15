@@ -159,7 +159,7 @@ class _ApiServicesPageState extends State<ApiServicesPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => ApiDetailPage(apiService: item),
+                        builder: (_) => ApiDetailPage(apiService: item,),
                       ),
                     );
                   },
