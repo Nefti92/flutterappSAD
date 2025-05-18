@@ -1,9 +1,9 @@
-class ContractFunction {
+class SCFunction {
   final int? id;
   final int serviceId;
   final String name;
 
-  ContractFunction({
+  SCFunction({
     this.id,
     required this.serviceId,
     required this.name,
@@ -17,8 +17,8 @@ class ContractFunction {
     };
   }
 
-  factory ContractFunction.fromMap(Map<String, dynamic> map) {
-    return ContractFunction(
+  factory SCFunction.fromMap(Map<String, dynamic> map) {
+    return SCFunction(
       id: map['id'],
       serviceId: map['service_id'],
       name: map['name'],

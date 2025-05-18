@@ -1,11 +1,9 @@
-import 'package:cdapp/models/api_service_database.dart';
-import 'package:cdapp/models/contract_function_model.dart';
-import 'package:cdapp/models/function_parameter_model.dart';
 import 'package:flutter/material.dart';
+import 'package:cdapp/models/function_parameter_model.dart';
 
 class EditFunctionPage extends StatefulWidget {
   final String initialName;
-  final List<FunctionParameter> initialParams;
+  final List<FuncParameter> initialParams;
   final int functionId;
 
   const EditFunctionPage({
@@ -21,7 +19,8 @@ class EditFunctionPage extends StatefulWidget {
 
 class _EditFunctionPageState extends State<EditFunctionPage> {
   late TextEditingController _nameController;
-  late List<FunctionParameter> _params;
+  late List<FuncParameter> _params;
+  late List<TextEditingController> _typeControllers = [];
   final List<int> _removedIds = [];
 
   final List<String> solidityTypes = [
@@ -33,22 +32,25 @@ class _EditFunctionPageState extends State<EditFunctionPage> {
     super.initState();
     _nameController = TextEditingController(text: widget.initialName);
     _params = widget.initialParams
-        .map((p) => FunctionParameter(
+        .map((p) => FuncParameter(
               id: p.id,
               functionId: p.functionId,
               name: p.name,
               type: p.type,
             ))
         .toList();
+    _typeControllers = _params.map((p) => TextEditingController(text: p.type)).toList();
   }
 
   void _addParameter() {
     setState(() {
-      _params.add(FunctionParameter(
+      final newParam = FuncParameter(
         functionId: widget.functionId,
         name: '',
         type: solidityTypes.first,
-      ));
+      );
+      _params.add(newParam);
+      _typeControllers.add(TextEditingController(text: newParam.type));
     });
   }
 
@@ -57,11 +59,14 @@ class _EditFunctionPageState extends State<EditFunctionPage> {
     if (param.id != null) _removedIds.add(param.id!);
     setState(() {
       _params.removeAt(index);
+      _typeControllers.removeAt(index);
     });
   }
 
   Widget _buildParameterEditor(int index) {
     final param = _params[index];
+    final typeController = _typeControllers[index];
+
     return Row(
       children: [
         Expanded(
@@ -76,16 +81,19 @@ class _EditFunctionPageState extends State<EditFunctionPage> {
         Expanded(
           flex: 4,
           child: TextFormField(
-            initialValue: param.type,
+            controller: typeController,
             decoration: InputDecoration(
               labelText: 'Param Type',
               suffixIcon: PopupMenuButton<String>(
                 icon: const Icon(Icons.arrow_drop_down),
-                onSelected: (value) => setState(() => param.type = value),
+                onSelected: (value) {
+                  typeController.text = value;
+                  param.type = value;
+                },
                 itemBuilder: (context) {
                   return solidityTypes
-                      .map((type) => PopupMenuItem<String>(
-                          value: type, child: Text(type)))
+                      .map((type) =>
+                          PopupMenuItem<String>(value: type, child: Text(type)))
                       .toList();
                 },
               ),
@@ -101,36 +109,22 @@ class _EditFunctionPageState extends State<EditFunctionPage> {
     );
   }
 
-  void _save() async {
+  void _save() {
     final name = _nameController.text.trim();
     if (name.isEmpty) return;
 
-    await ApiDatabase.updateFunction(
-      ContractFunction(id: widget.functionId, serviceId: widget.functionId, name: name),
-    );
-
-    for (final rid in _removedIds) {
-      await ApiDatabase.deleteParameter(rid);
-    }
-
-    for (final p in _params) {
-      if (p.name.trim().isEmpty || p.type.trim().isEmpty) continue;
-      if (p.id == null) {
-        await ApiDatabase.insertParameter(p);
-      } else {
-        await ApiDatabase.updateParameter(p);
-      }
-    }
-
-    Navigator.pop(context, true);
+    Navigator.pop(context, {
+      'name': name,
+      'params': _params,
+      'removed': _removedIds,
+    });
   }
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Function'),
+        title: Text("Detail ${_nameController.text}"),
         actions: [
           IconButton(
             icon: const Icon(Icons.save),

@@ -144,5 +144,4 @@ class ApiDatabase {
     await db.delete('function_parameters', where: 'id = ?', whereArgs: [id]);
   }
 
-
 }

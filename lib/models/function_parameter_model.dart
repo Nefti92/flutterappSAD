@@ -1,10 +1,10 @@
-class FunctionParameter {
+class FuncParameter {
   final int? id;
   final int functionId;
   String name; 
   String type;
 
-  FunctionParameter({
+  FuncParameter({
     this.id,
     required this.functionId,
     required this.name,
@@ -18,7 +18,7 @@ class FunctionParameter {
     'type': type,
   };
 
-  factory FunctionParameter.fromMap(Map<String, dynamic> map) => FunctionParameter(
+  factory FuncParameter.fromMap(Map<String, dynamic> map) => FuncParameter(
     id: map['id'],
     functionId: map['function_id'],
     name: map['name'],
