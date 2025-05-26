@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:cdapp/homePage.dart';
@@ -7,7 +9,19 @@ import 'customWidgets.dart';
 var mail = 'admin';
 var password = '1234';
 
+class DevHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? ctx) {
+    final client = super.createHttpClient(ctx);
+    client.badCertificateCallback =
+        (X509Certificate cert, String host, int port) => true;
+    return client;
+  }
+}
+
 void main() {
+  // TO REMOVE IN PRODUCTION
+  HttpOverrides.global = DevHttpOverrides();
   // Avvio dell'App
   runApp(MyApp());
 }

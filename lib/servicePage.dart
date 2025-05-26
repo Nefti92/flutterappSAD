@@ -2,6 +2,8 @@ import 'package:cdapp/editFunctionPage.dart';
 import 'package:cdapp/functionCallPage.dart';
 import 'package:cdapp/models/contract_function_model.dart';
 import 'package:cdapp/models/function_parameter_model.dart';
+import 'package:cdapp/models/wallet_service_model.dart';
+import 'package:cdapp/utils/web3_extensions.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:cdapp/models/api_service_model.dart';
@@ -196,10 +198,14 @@ class _ApiDetailPageState extends State<ApiDetailPage> with SingleTickerProvider
     SCFunction func,
     List<FuncParameter> params,
     Map<String, String> inputs,
+    BigInt valueWei,
+    int? maxGas,
   ) async {
     final contractAddress = EthereumAddress.fromHex(widget.apiService.address);
     var rpcUrl = 'http://${widget.apiService.ip}:${widget.apiService.port}';
     if (widget.apiService.port == 443) rpcUrl = 'https://${widget.apiService.ip}';
+    rpcUrl = "https://192.168.1.57";
+    print(contractAddress);
 
     // Log payload
     final fullPayload = {
@@ -226,7 +232,7 @@ class _ApiDetailPageState extends State<ApiDetailPage> with SingleTickerProvider
           "outputs": [
             ${outputParams.map((p) => '{"name": "${p.name}", "type": "${p.type}"}').join(',')}
           ],
-          "payable": false,
+          "payable": "${func.payable}",
           "stateMutability": "${func.stateMutability}",
           "type": "function"
         }
@@ -235,7 +241,7 @@ class _ApiDetailPageState extends State<ApiDetailPage> with SingleTickerProvider
       func.name,
     );
 
-    final prettyABI = const JsonEncoder.withIndent('  ').convert(abi);
+    final prettyABI = const JsonEncoder.withIndent('  ').convert(abi.toString());
     debugPrint(prettyABI);
 
     final client = Web3Client(rpcUrl, http.Client());
@@ -266,36 +272,79 @@ class _ApiDetailPageState extends State<ApiDetailPage> with SingleTickerProvider
     }).toList();
 
     try {
-      final result = await client.call(
-        contract: contract,
-        function: function,
-        params: typedInputs,
-      );
+      if (func.stateMutability == 'view' || func.stateMutability == 'pure') {
+        // READ-ONLY
+        final result = await client.call(
+          contract: contract,
+          function: function,
+          params: typedInputs,
+        );
 
-      debugPrint('Result: $result');
-    } catch (e) {
-      debugPrint('Error during function call: $e');
-    } finally {
-      client.dispose();
+        debugPrint('call() → $result');
+      } else {
+          // STATE-CHANGING --> SIGNED TX
+          final privateKeyHex = await WalletService.getPrivateKey();
+          if (privateKeyHex == null) {
+            throw Exception('Private key required for ${func.name}()');
+          }
+          final creds = EthPrivateKey.fromHex(privateKeyHex);
+
+          final tx = Transaction.callContract(
+            contract: contract,
+            function: function,
+            parameters: typedInputs,
+            value: EtherAmount.fromBigInt(EtherUnit.wei, valueWei),
+            maxGas: maxGas,
+          );
+
+          final txHash = await client.sendTransaction(
+            creds,
+            tx,
+            chainId: widget.apiService.chainID,
+          );
+          debugPrint('txHash → $txHash');
+
+          final receipt = await client.waitForReceipt(txHash);
+
+          debugPrint('Mined in block ${receipt.blockNumber}');
+          debugPrint('Receipt → $receipt');
+        }
+      } catch (e) {
+        debugPrint('Error during ${func.name}: $e');
+      } finally {
+        client.dispose();
+      }
     }
-  }
 
   Future<void> _callContractFunction(SCFunction func) async {
     final params = await ApiDatabase.getParametersForFunction(func.id!);
 
-    final inputValues = await Navigator.push<Map<String, String>>(
+    final inputs = await Navigator.push<Map<String, String>>(
       context,
       MaterialPageRoute(
         builder: (_) => FunctionCallPage(func: func, params: params),
       ),
     );
 
-    if (inputValues != null) {
-      await _callContractFunctionWithInput(func, params, inputValues);
+    if (inputs != null) {
+      final valueWei = inputs.containsKey('valueWei')
+          ? BigInt.parse(inputs['valueWei']!)
+          : BigInt.zero;
+      final maxGas = inputs.containsKey('maxGas')
+          ? int.parse(inputs['maxGas']!)
+          : null;
+      
+      print(inputs.values);
+      await _callContractFunctionWithInput(
+        func,
+        params,
+        inputs,
+        valueWei,
+        maxGas,
+      );
     }
   }
-
-
+  
 
   @override
   Widget build(BuildContext context) {

@@ -1,6 +1,5 @@
+import 'package:cdapp/models/wallet_service_model.dart';
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart' as p;
 import 'baseScaffold.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -13,60 +12,29 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   final TextEditingController _publicController = TextEditingController();
   final TextEditingController _privateController = TextEditingController();
-  Database? _database;
 
   @override
   void initState() {
     super.initState();
-    _initDb();
-  }
-
-  Future<void> _initDb() async {
-    final path = p.join(await getDatabasesPath(), 'wallet.db');
-    _database = await openDatabase(
-      path,
-      version: 1,
-      onCreate: (db, version) async {
-        await db.execute('''
-          CREATE TABLE wallet(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            passphrase TEXT,
-            public TEXT,
-            private TEXT
-          )
-        ''');
-      },
-    );
     _loadWalletData();
   }
 
   Future<void> _loadWalletData() async {
-    final data = await _database!.query('wallet', limit: 1);
-    if (data.isNotEmpty) {
-      _publicController.text = data.first['public'] as String? ?? '';
-      _privateController.text = data.first['private'] as String? ?? '';
-    }
+    final public = await WalletService.getPublicAddress();
+    final priv = await WalletService.getPrivateKey();
+    if (public != null) _publicController.text = public;
+    if (priv != null) _privateController.text = priv;
   }
 
   Future<void> _saveWallet() async {
-    final public = _publicController.text.trim();
-    final private = _privateController.text.trim();
+    await WalletService.saveWallet(
+      publicAddress: _publicController.text.trim(),
+      privateKey: _privateController.text.trim(),
+    );
 
-    final existing = await _database!.query('wallet', limit: 1);
-    if (existing.isNotEmpty) {
-      await _database!.update('wallet', {
-        'public': public,
-        'private': private,
-      });
-    } else {
-      await _database!.insert('wallet', {
-        'public': public,
-        'private': private,
-      });
-    }
-
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Wallet address saved.')),
+      const SnackBar(content: Text('Wallet saved.')),
     );
   }
 
@@ -87,12 +55,12 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
             const SizedBox(height: 20),
-            const Text('Private Address'),
+            const Text('Private Key'),
             TextField(
               controller: _privateController,
-              // obscureText: true,
+              obscureText: true,
               decoration: const InputDecoration(
-                hintText: 'Enter your private address',
+                hintText: 'Enter your private key',
               ),
             ),
             const SizedBox(height: 40),

@@ -43,8 +43,6 @@ class ApiDatabase {
           )
         ''');
 
-
-
         await db.execute('''
           CREATE TABLE function_parameters (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
