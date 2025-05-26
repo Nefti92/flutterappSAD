@@ -32,13 +32,18 @@ class ApiDatabase {
         ''');
 
         await db.execute('''
-        CREATE TABLE contract_functions (
+          CREATE TABLE contract_functions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             service_id INTEGER NOT NULL,
             name TEXT NOT NULL,
+            is_view INTEGER NOT NULL DEFAULT 1,
+            state_mutability TEXT NOT NULL DEFAULT 'view',
+            payable INTEGER NOT NULL DEFAULT 0,
             FOREIGN KEY(service_id) REFERENCES api_services(id) ON DELETE CASCADE
           )
         ''');
+
+
 
         await db.execute('''
           CREATE TABLE function_parameters (
@@ -46,6 +51,7 @@ class ApiDatabase {
             function_id INTEGER NOT NULL,
             name TEXT NOT NULL,
             type TEXT NOT NULL,
+            output BOOLEAN NOT NULL,
             FOREIGN KEY(function_id) REFERENCES contract_functions(id) ON DELETE CASCADE
           )
         ''');
@@ -86,22 +92,22 @@ class ApiDatabase {
   
   // Function Section
 
-  static Future<int> insertFunction(ContractFunction func) async {
+  static Future<int> insertFunction(SCFunction func) async {
     final db = await database;
     return await db.insert('contract_functions', func.toMap());
   }
 
-  static Future<List<ContractFunction>> getFunctionsForService(int serviceId) async {
+  static Future<List<SCFunction>> getFunctionsForService(int serviceId) async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
       'contract_functions',
       where: 'service_id = ?',
       whereArgs: [serviceId],
     );
-    return maps.map((map) => ContractFunction.fromMap(map)).toList();
+    return maps.map((map) => SCFunction.fromMap(map)).toList();
   }
 
-  static Future<void> updateFunction(ContractFunction func) async {
+  static Future<void> updateFunction(SCFunction func) async {
     final db = await database;
     await db.update(
       'contract_functions',
@@ -118,22 +124,22 @@ class ApiDatabase {
 
   // Parameter Section
 
-  static Future<List<FunctionParameter>> getParametersForFunction(int functionId) async {
+  static Future<List<FuncParameter>> getParametersForFunction(int functionId) async {
   final db = await database;
   final maps = await db.query(
     'function_parameters',
     where: 'function_id = ?',
     whereArgs: [functionId],
   );
-    return maps.map((e) => FunctionParameter.fromMap(e)).toList();
+    return maps.map((e) => FuncParameter.fromMap(e)).toList();
   }
 
-  static Future<void> insertParameter(FunctionParameter param) async {
+  static Future<void> insertParameter(FuncParameter param) async {
     final db = await database;
     await db.insert('function_parameters', param.toMap());
   }
 
-  static Future<void> updateParameter(FunctionParameter param) async {
+  static Future<void> updateParameter(FuncParameter param) async {
     final db = await database;
     await db.update('function_parameters', param.toMap(),
         where: 'id = ?', whereArgs: [param.id]);

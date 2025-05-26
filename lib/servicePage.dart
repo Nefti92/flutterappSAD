@@ -3,9 +3,11 @@ import 'package:cdapp/functionCallPage.dart';
 import 'package:cdapp/models/contract_function_model.dart';
 import 'package:cdapp/models/function_parameter_model.dart';
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import 'package:cdapp/models/api_service_model.dart';
 import 'package:cdapp/models/api_service_database.dart';
 import 'package:http/http.dart' as http;
+import 'package:web3dart/crypto.dart';
 import 'package:web3dart/web3dart.dart';
 
 class ApiDetailPage extends StatefulWidget {
@@ -38,7 +40,12 @@ class _ApiDetailPageState extends State<ApiDetailPage> with SingleTickerProvider
   Future<void> _addFunction(String funcName) async {
     if (funcName.trim().isEmpty) return;
 
-    final newFunc = SCFunction(serviceId: widget.apiService.id!, name: funcName.trim());
+    final newFunc = SCFunction(
+      serviceId: widget.apiService.id!,
+      name: funcName.trim(),
+      stateMutability: 'view',
+      payable: false,
+    );
     final newId = await ApiDatabase.insertFunction(newFunc);
 
     _functionNameController.clear();
@@ -50,6 +57,8 @@ class _ApiDetailPageState extends State<ApiDetailPage> with SingleTickerProvider
           initialName: funcName,
           initialParams: [],
           functionId: newId,
+          initialStateMutability: 'view',
+          initialPayable: false,
         ),
       ),
     );
@@ -58,6 +67,18 @@ class _ApiDetailPageState extends State<ApiDetailPage> with SingleTickerProvider
 
     final params = result['params'] as List<FuncParameter>;
     final removed = result['removed'] as List<int>;
+    final stateMutability = result['stateMutability'] as String;
+    final payable = result['payable'] as bool;
+
+    await ApiDatabase.updateFunction(
+      SCFunction(
+        id: newId,
+        serviceId: widget.apiService.id!,
+        name: funcName.trim(),
+        stateMutability: stateMutability,
+        payable: payable,
+      ),
+    );
 
     for (final rid in removed) {
       await ApiDatabase.deleteParameter(rid);
@@ -66,11 +87,7 @@ class _ApiDetailPageState extends State<ApiDetailPage> with SingleTickerProvider
     for (final p in params) {
       if (p.name.trim().isEmpty || p.type.trim().isEmpty) continue;
       if (p.id == null) {
-        await ApiDatabase.insertParameter(FuncParameter(
-          functionId: newId,
-          name: p.name,
-          type: p.type,
-        ));
+        await ApiDatabase.insertParameter(p);
       } else {
         await ApiDatabase.updateParameter(p);
       }
@@ -78,7 +95,6 @@ class _ApiDetailPageState extends State<ApiDetailPage> with SingleTickerProvider
 
     await _loadFunctions();
   }
-
 
   Future<void> _editFunction(SCFunction func) async {
     final existing = await ApiDatabase.getParametersForFunction(func.id!);
@@ -89,17 +105,28 @@ class _ApiDetailPageState extends State<ApiDetailPage> with SingleTickerProvider
           initialName: func.name,
           initialParams: existing,
           functionId: func.id!,
+          initialStateMutability: func.stateMutability,
+          initialPayable: func.payable,
         ),
       ),
     );
+
     if (result == null) return;
 
     final name = result['name'] as String;
     final params = result['params'] as List<FuncParameter>;
     final removed = result['removed'] as List<int>;
+    final stateMutability = result['stateMutability'] as String;
+    final payable = result['payable'] as bool;
 
     await ApiDatabase.updateFunction(
-      SCFunction(id: func.id, serviceId: func.serviceId, name: name),
+      SCFunction(
+        id: func.id,
+        serviceId: func.serviceId,
+        name: name,
+        stateMutability: stateMutability,
+        payable: payable,
+      ),
     );
 
     for (final rid in removed) {
@@ -116,6 +143,8 @@ class _ApiDetailPageState extends State<ApiDetailPage> with SingleTickerProvider
 
     await _loadFunctions();
   }
+
+
 
   Future<void> _deleteFunction(int id) async {
     await ApiDatabase.deleteFunction(id);
@@ -169,57 +198,85 @@ class _ApiDetailPageState extends State<ApiDetailPage> with SingleTickerProvider
     Map<String, String> inputs,
   ) async {
     final contractAddress = EthereumAddress.fromHex(widget.apiService.address);
-    final rpcUrl = 'http://${widget.apiService.ip}:${widget.apiService.port}';
-    // final abi = await _loadContractAbi(); // Implement this to load your ABI
-    final abi = "";
-    final client = Web3Client(rpcUrl, http.Client());
+    var rpcUrl = 'http://${widget.apiService.ip}:${widget.apiService.port}';
+    if (widget.apiService.port == 443) rpcUrl = 'https://${widget.apiService.ip}';
 
-    final contract = DeployedContract(
-      ContractAbi.fromJson(abi, widget.apiService.title),
-      contractAddress,
+    // Log payload
+    final fullPayload = {
+      'function': func.toMap(),
+      'parameters': params.map((p) => p.toMap()).toList(),
+      'inputs': inputs,
+    };
+    final pretty = const JsonEncoder.withIndent('  ').convert(fullPayload);
+    debugPrint(pretty);
+
+    // Separate input and output parameters
+    final inputParams = params.where((p) => !p.output).toList();
+    final outputParams = params.where((p) => p.output).toList();
+
+    // Construct ABI dynamically
+    final abi = ContractAbi.fromJson(
+      '''
+      [
+        {
+          "inputs": [
+            ${inputParams.map((p) => '{"name": "${p.name}", "type": "${p.type}"}').join(',')}
+          ],
+          "name": "${func.name}",
+          "outputs": [
+            ${outputParams.map((p) => '{"name": "${p.name}", "type": "${p.type}"}').join(',')}
+          ],
+          "payable": false,
+          "stateMutability": "${func.stateMutability}",
+          "type": "function"
+        }
+      ]
+      ''',
+      func.name,
     );
 
-    final SCFunction = contract.function(func.name);
+    final prettyABI = const JsonEncoder.withIndent('  ').convert(abi);
+    debugPrint(prettyABI);
+
+    final client = Web3Client(rpcUrl, http.Client());
+    final contract = DeployedContract(abi, contractAddress);
+    final function = contract.function(func.name);
+
+    // Parse input parameters into correct Dart types
+    final typedInputs = inputParams.map((p) {
+      final value = inputs[p.name]!;
+      switch (p.type) {
+        case 'address':
+          return EthereumAddress.fromHex(value);
+        case 'uint':
+        case 'uint256':
+        case 'int':
+        case 'int256':
+        case 'uint8':
+          return BigInt.parse(value);
+        case 'bool':
+          return value.toLowerCase() == 'true';
+        case 'string':
+          return value;
+        case 'bytes':
+          return hexToBytes(value);
+        default:
+          throw Exception('Unsupported type: ${p.type}');
+      }
+    }).toList();
 
     try {
-      final inputParams = params.map((p) {
-        final value = inputs[p.name]!;
-        switch (p.type) {
-          case 'address':
-            return EthereumAddress.fromHex(value);
-          case 'uint':
-          case 'uint256':
-          case 'int':
-          case 'int256':
-            return BigInt.parse(value);
-          case 'bool':
-            return value.toLowerCase() == 'true';
-          case 'string':
-            return value;
-          default:
-            throw Exception('Unsupported type: ${p.type}');
-        }
-      }).toList();
-
       final result = await client.call(
         contract: contract,
-        function: SCFunction,
-        params: inputParams,
+        function: function,
+        params: typedInputs,
       );
 
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Result'),
-            content: Text(result.toString()),
-            actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('OK'))],
-          ),
-        );
-      }
+      debugPrint('Result: $result');
     } catch (e) {
-      print('Error: $e');
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      debugPrint('Error during function call: $e');
+    } finally {
+      client.dispose();
     }
   }
 

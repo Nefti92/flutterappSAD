@@ -5,12 +5,16 @@ class EditFunctionPage extends StatefulWidget {
   final String initialName;
   final List<FuncParameter> initialParams;
   final int functionId;
+  final String initialStateMutability;
+  final bool initialPayable;
 
   const EditFunctionPage({
     super.key,
     required this.initialName,
     required this.initialParams,
     required this.functionId,
+    required this.initialStateMutability,
+    required this.initialPayable,
   });
 
   @override
@@ -27,27 +31,39 @@ class _EditFunctionPageState extends State<EditFunctionPage> {
     'uint256', 'uint', 'address', 'bool', 'string', 'bytes', 'int', 'uint8', 'int256'
   ];
 
+  final List<String> mutabilityOptions = [
+    'view', 'pure', 'empty'
+  ];
+
+  bool _isView = true;
+  String _stateMutability = 'view';
+  bool _payable = false;
+
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.initialName);
+    _stateMutability = widget.initialStateMutability;
+    _payable = widget.initialPayable;
     _params = widget.initialParams
         .map((p) => FuncParameter(
               id: p.id,
               functionId: p.functionId,
               name: p.name,
               type: p.type,
+              output: p.output,
             ))
         .toList();
     _typeControllers = _params.map((p) => TextEditingController(text: p.type)).toList();
   }
 
-  void _addParameter() {
+  void _addParameter(bool isOutput) {
     setState(() {
       final newParam = FuncParameter(
         functionId: widget.functionId,
         name: '',
         type: solidityTypes.first,
+        output: isOutput,
       );
       _params.add(newParam);
       _typeControllers.add(TextEditingController(text: newParam.type));
@@ -117,11 +133,17 @@ class _EditFunctionPageState extends State<EditFunctionPage> {
       'name': name,
       'params': _params,
       'removed': _removedIds,
+      'isView': _isView,
+      'stateMutability': _stateMutability,
+      'payable': _payable,
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final inputIndexes = List.generate(_params.length, (i) => i).where((i) => !_params[i].output).toList();
+    final outputIndexes = List.generate(_params.length, (i) => i).where((i) => _params[i].output).toList();
+
     return Scaffold(
       appBar: AppBar(
         title: Text("Detail ${_nameController.text}"),
@@ -141,13 +163,58 @@ class _EditFunctionPageState extends State<EditFunctionPage> {
               decoration: const InputDecoration(labelText: 'Function Name'),
             ),
             const SizedBox(height: 16),
-            const Text('Parameters:'),
+            Row(
+              children: [
+                const Text('Payable:'),
+                Switch(
+                  value: _payable,
+                  onChanged: (val) => setState(() => _payable = val),
+                ),
+                const SizedBox(width: 24),
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    value: _stateMutability,
+                    items: mutabilityOptions
+                        .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                        .toList(),
+                    onChanged: (val) {
+                      if (val != null) setState(() => _stateMutability = val);
+                    },
+                    decoration: const InputDecoration(labelText: 'State Mutability'),
+                  ),
+                ),
+              ],
+            ),
+            Divider(
+              color: Colors.black,
+              thickness: 1,
+              height: 30,
+            ),
+            const SizedBox(height: 24),
+            const Text('Input Parameters:'),
             const SizedBox(height: 8),
-            ...List.generate(_params.length, _buildParameterEditor),
+            ...inputIndexes.map(_buildParameterEditor),
             TextButton.icon(
               icon: const Icon(Icons.add),
-              label: const Text('Add Parameter'),
-              onPressed: _addParameter,
+              label: const Text('Add Input Parameter'),
+              onPressed: () => _addParameter(false),
+            ),
+            const SizedBox(height: 24),
+            Divider(
+              color: Colors.black,
+              thickness: 1,
+              height: 30,
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text('Output Parameters:'),
+            ),
+            const SizedBox(height: 8),
+            ...outputIndexes.map(_buildParameterEditor),
+            TextButton.icon(
+              icon: const Icon(Icons.add),
+              label: const Text('Add Output Parameter'),
+              onPressed: () => _addParameter(true),
             ),
           ],
         ),
