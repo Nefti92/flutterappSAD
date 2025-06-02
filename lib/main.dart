@@ -1,10 +1,10 @@
 import 'dart:io';
-
+import 'package:cdapp/eventSubscription.dart';
+import 'package:cdapp/patternLockPage.dart';
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
-import 'package:cdapp/homePage.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:provider/provider.dart';
-import 'customWidgets.dart';
 
 var mail = 'admin';
 var password = '1234';
@@ -19,9 +19,14 @@ class DevHttpOverrides extends HttpOverrides {
   }
 }
 
-void main() {
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   // TO REMOVE IN PRODUCTION
   HttpOverrides.global = DevHttpOverrides();
+  // Gestione Notifiche Eventi 
+  await EventSubscriptionService.initialize();
+  await EventSubscriptionService.startListeningForSubscribedEvents();
   // Avvio dell'App
   runApp(MyApp());
 }
@@ -44,7 +49,19 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
         ),
         // imposta la pagina iniziale dell'App
-        home: LoginPage(),
+        home: FutureBuilder<String?>(
+          future: const FlutterSecureStorage().read(key: 'pattern_hash'),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            final hasPattern = snapshot.data != null;
+            return PatternLockScreen(isSettingPattern: !hasPattern);
+          },
+        ),
       ),
     );
   }
@@ -53,100 +70,4 @@ class MyApp extends StatelessWidget {
 class MyAppState extends ChangeNotifier {
   // Gestisce lo stato dell'app
   var current = WordPair.random();
-}
-
-class LoginPage extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    // Si ottiene la larghezza dello schermo
-    var screenWidth = MediaQuery.of(context).size.width;
-    String inputMail = '';
-    String inputPassword = '';
-    const homePage = HomePage();
-
-    return Scaffold(
-      body: Center(
-        child: Column(
-          // Centra gli elementi verticalmente
-          mainAxisAlignment: MainAxisAlignment.center,
-
-          children: [
-            
-            // Titolo della pagina di Login
-            Text('Login', 
-              style: TextStyle(
-                color: Color.fromRGBO(0, 0, 0, 1),
-                fontSize: 30,
-              ),
-              selectionColor: Color.fromRGBO(0, 0, 0, 1),
-            ),
-
-            // Separatore
-            SizedBox(height: 10),
-
-            // Widget personalizzato per l'inserimento della e-mail
-            CustomTextField(
-              // Titolo del widget
-              labelText: 'E-mail',
-              // 'consiglio' visualizzato per la scrittura
-              hintText: 'Inserisci la tua email',
-              // Icona
-              prefixIcon: Icons.email,
-              // Tipologia di scrittura permessa
-              keyboardType: TextInputType.emailAddress,
-              // Funzione di lettura del testo scritto
-              onChanged: (value){
-                inputMail = value;
-              },
-              // Colore del 'consiglio'
-              hintColor: const Color.fromRGBO(0, 0, 0, 0.3),
-              // Colore del bordo della cella
-              borderColor: const Color.fromRGBO(255, 204, 128, 1),
-              // Altezza della cella
-              height: 70,
-              // Larghezza della cella
-              width: screenWidth*0.93,
-            ),
-
-            // Separatore
-            SizedBox(height: 10),
-            
-            // Widget personalizzato per l'inserimento della password
-            CustomTextField(
-              labelText: 'Password',
-              hintText: 'Inserisci la tua password',
-              prefixIcon: Icons.lock,
-              onChanged: (value){
-                inputPassword = value;
-                            },
-              isObscure: true,
-              hintColor: const Color.fromRGBO(0, 0, 0, 0.3),
-              borderColor: const Color.fromRGBO(255, 204, 128, 1),
-              height: 70,
-              width: screenWidth*0.93,
-            ),
-            
-            // Separatore
-            SizedBox(height: 15),
-            
-            // Pulsante per verificare le credenziali
-            ElevatedButton(
-              onPressed: () {
-                print('password: $inputPassword, $password');
-                print('email: $inputMail, $mail');
-                if(mail == inputMail && password == inputPassword) {
-                  print('loggato!');
-                }
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => homePage),
-                );
-              },
-              child: Text('Accedi'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'apiServicesPage.dart';
+import 'contractsPage.dart';
 import 'homePage.dart';
 import 'main.dart';
 import 'settingsPage.dart';
@@ -26,7 +26,7 @@ class BaseScaffold extends StatelessWidget {
       case 1:
         page = const HomePage();
       case 2:
-        page = const ApiServicesPage();
+        page = const ContractsPage();
       case 3:
         page = const SettingsPage();
       default:

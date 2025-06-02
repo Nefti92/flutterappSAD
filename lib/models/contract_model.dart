@@ -1,5 +1,4 @@
-// lib/models/api_service_model.dart
-class ApiService {
+class Contract {
   final int? id;
   final String address;
   final String title;
@@ -10,7 +9,7 @@ class ApiService {
   final int chainID;
   final DateTime lastAccess;
 
-  ApiService({
+  Contract({
     this.id,
     required this.title,
     required this.description,
@@ -36,8 +35,8 @@ class ApiService {
     };
   }
 
-  static ApiService fromMap(Map<String, dynamic> map) {
-    return ApiService(
+  static Contract fromMap(Map<String, dynamic> map) {
+    return Contract(
       id: map['id'],
       address: map['address'],
       title: map['title'],

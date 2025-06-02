@@ -1,4 +1,7 @@
+import 'package:cdapp/models/api_database.dart';
+import 'package:cdapp/models/call_result_model.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'baseScaffold.dart';
 
 class HomePage extends StatefulWidget {
@@ -12,24 +15,14 @@ class _HomePage extends State<HomePage> {
   final TextEditingController _searchController = TextEditingController();
   String searchQuery = "";
 
-  final List<Map<String, String>> items = [
-    {"title": "Apple", "image": "https://upload.wikimedia.org/wikipedia/commons/1/15/Red_Apple.jpg"},
-    {"title": "Banana", "image": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Banana-Single.jpg"},
-    {"title": "Cherry", "image": "https://upload.wikimedia.org/wikipedia/commons/b/bb/Cherry_Stella444.jpg"},
-    {"title": "Date", "image": "https://upload.wikimedia.org/wikipedia/commons/1/15/Red_Apple.jpg"},
-    {"title": "Elderberry", "image": "https://upload.wikimedia.org/wikipedia/commons/1/15/Red_Apple.jpg"},
-    {"title": "Fig", "image": "https://upload.wikimedia.org/wikipedia/commons/1/15/Red_Apple.jpg"},
-    {"title": "Grape", "image": "https://upload.wikimedia.org/wikipedia/commons/1/15/Red_Apple.jpg"},
-    {"title": "Honeydew", "image": "https://upload.wikimedia.org/wikipedia/commons/1/15/Red_Apple.jpg"},
-  ];
+  late Future<List<CallResult>>? _futureResults = ApiDatabase.getAllCallResultsSorted();
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
-    List<Map<String, String>> filteredItems = items
-        .where((item) =>
-            item["title"]!.toLowerCase().contains(searchQuery.toLowerCase()))
-        .toList();
-
     return BaseScaffold(
       currentIndex: 1,
       body: Column(
@@ -44,11 +37,7 @@ class _HomePage extends State<HomePage> {
               ),
               child: TextField(
                 controller: _searchController,
-                onChanged: (value) {
-                  setState(() {
-                    searchQuery = value;
-                  });
-                },
+                onChanged: (val) => setState(() => searchQuery = val),
                 decoration: InputDecoration(
                   hintText: "Search...",
                   border: InputBorder.none,
@@ -59,51 +48,83 @@ class _HomePage extends State<HomePage> {
             ),
           ),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 1,
-                ),
-                itemCount: filteredItems.length,
-                itemBuilder: (context, index) {
-                  return LayoutBuilder(
-                    builder: (context, constraints) {
-                      double imageSize = constraints.maxWidth * 0.7; // relative sizing
+            child: FutureBuilder<List<CallResult>>(
+              future: _futureResults,
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                final filtered = snapshot.data!
+                    .where((result) => result.functionName.toLowerCase().contains(searchQuery.toLowerCase()))
+                    .toList();
 
-                      return Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.black),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                if (filtered.isEmpty) {
+                  return const Center(child: Text('Recent Results Not Available'));
+                }
+
+                return ListView.builder(
+                  itemCount: filtered.length,
+                  itemBuilder: (context, index) {
+                    final res = filtered[index];
+                    final resultText = filtered[index].result;
+                    final imageUrlPattern = RegExp(r'(https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp))', caseSensitive: false);
+                    final match = imageUrlPattern.firstMatch(resultText);
+                    final imageUrl = match?.group(0);
+
+                    return Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Image.network(
-                              filteredItems[index]["image"]!,
-                              width: imageSize,
-                              height: imageSize,
-                              fit: BoxFit.cover,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    'Function: ${res.functionName}',
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  tooltip: 'Delete',
+                                  onPressed: () async {
+                                    await ApiDatabase.deleteCallResult(res.id!);
+                                    setState(() {
+                                      _futureResults = ApiDatabase.getAllCallResultsSorted();
+                                    });
+                                  },
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 10),
-                            Text(
-                              filteredItems[index]["title"]!,
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
+                            const SizedBox(height: 8),
+                            Text('Contract: ${res.contractAddress}'),
+                            const SizedBox(height: 4),
+                            if (imageUrl != null)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 9),
+                                child: Center(
+                                  child: Image.network(
+                                    imageUrl,
+                                    height: 200,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) => Text(resultText),
+                                  ),
+                                ),
+                              )
+                            else
+                              Text('Result: $resultText'),
+
+                            const SizedBox(height: 4),
+                            Text('Time: ${DateFormat('yyyy-MM-dd HH:mm').format(res.timestamp.toLocal())}'),
                           ],
                         ),
-                      );
-                    },
-                  );
-                },
-              ),
+                      ),
+                    );
+                  },
+                );
+              }
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
           ),
         ],
       ),

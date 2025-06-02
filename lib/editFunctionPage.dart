@@ -146,7 +146,7 @@ class _EditFunctionPageState extends State<EditFunctionPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Detail ${_nameController.text}"),
+        title: Text("Edit Function ${_nameController.text}"),
         actions: [
           IconButton(
             icon: const Icon(Icons.save),

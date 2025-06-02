@@ -1,4 +1,5 @@
 {
     "cmake.ignoreCMakeListsMissing": true,
-    "wake.compiler.solc.remappings": []
+    "wake.compiler.solc.remappings": [],
+    "java.configuration.updateBuildConfiguration": "interactive"
 }
